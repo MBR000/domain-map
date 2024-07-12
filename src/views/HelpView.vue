@@ -163,6 +163,7 @@ const trafficconfig = ref({
   data: [],
   align: ["center", "center", "center", "center"],
 });
+const timerList = [];
 let lineID = 0;
 const fetchTime = 2000;
 function scrollUp() {
@@ -210,7 +211,8 @@ let pollingInterval;
 
 function startSimulate() {
   ifSimulate.value = true;
-
+  simulateText.value = "正在启动";
+  stopPolling();
   Promise.all([
     fetch("/api/backgorund?state=stop", {
       method: "POST",
@@ -237,12 +239,10 @@ function startSimulate() {
 
       console.log("Background data:", backgroundData);
       console.log("Simulate data:", simulateData);
-      stopPolling();
-      simulateText.value = "正在启动";
-      setTimeout(() => {
-        chartRef.value.remove("flyLine", "removeAll");
-        startPolling(1);
-      }, fetchTime * 2);
+
+      timerList.forEach((item) => clearTimeout(item));
+      chartRef.value.remove("flyLine", "removeAll");
+      startPolling(1);
     })
     .catch((error) => {
       console.error("Error:", error);
@@ -251,6 +251,8 @@ function startSimulate() {
 
 function stopSimulate() {
   ifSimulate.value = false;
+  simulateText.value = "正在关闭";
+  stopPolling();
   Promise.all([
     fetch("/api/backgorund?state=start", {
       method: "POST",
@@ -276,12 +278,10 @@ function stopSimulate() {
       };
       console.log("Background data:", backgroundData);
       console.log("Simulate data:", simulateData);
-      stopPolling();
-      simulateText.value = "正在关闭";
-      setTimeout(() => {
-        chartRef.value.remove("flyLine", "removeAll");
-        startPolling(0);
-      }, fetchTime * 2);
+
+      timerList.forEach((item) => clearTimeout(item));
+      chartRef.value.remove("flyLine", "removeAll");
+      startPolling(0);
     })
     .catch((error) => {
       console.error("Error:", error);
@@ -325,7 +325,7 @@ function fetchData(params) {
       res.forEach((item, index) => {
         const delay = (index * fetchTime) / res.length; // 计算每个飞线动画的延迟时间
 
-        setTimeout(() => {
+        let timer = setTimeout(() => {
           chartRef.value.addData("flyLine", [
             {
               from: {
@@ -369,6 +369,7 @@ function fetchData(params) {
           ]);
           lineID += 2;
         }, delay);
+        timerList.push(timer);
       });
     })
     .catch((error) => {
