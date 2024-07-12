@@ -18,14 +18,14 @@
           <el-col :span="12" style="display: flex; justify-content: flex-end"
             ><div class="grid-content ep-bg-purple-light" />
             <div v-show="!ifSimulate">
-              <el-button type="primary" round @click="startSimulate()"
-                >开始模拟</el-button
-              >
+              <el-button type="primary" round @click="startSimulate()">{{
+                simulateText
+              }}</el-button>
             </div>
             <div v-show="ifSimulate">
-              <el-button type="primary" round @click="stopSimulate()"
-                >停止模拟</el-button
-              >
+              <el-button type="primary" round @click="stopSimulate()">{{
+                simulateText
+              }}</el-button>
             </div></el-col
           >
         </el-row>
@@ -41,14 +41,14 @@
           <el-col :span="12" style="display: flex; justify-content: flex-end"
             ><div class="grid-content ep-bg-purple-light" />
             <div v-show="!ifSimulate">
-              <el-button type="primary" round @click="startSimulate()"
-                >开始模拟</el-button
-              >
+              <el-button type="primary" round @click="startSimulate()">{{
+                simulateText
+              }}</el-button>
             </div>
             <div v-show="ifSimulate">
-              <el-button type="primary" round @click="stopSimulate()"
-                >停止模拟</el-button
-              >
+              <el-button type="primary" round @click="stopSimulate()">{{
+                simulateText
+              }}</el-button>
             </div></el-col
           >
         </el-row>
@@ -64,14 +64,14 @@
           <el-col :span="12" style="display: flex; justify-content: flex-end"
             ><div class="grid-content ep-bg-purple-light" />
             <div v-show="!ifSimulate">
-              <el-button type="primary" round @click="startSimulate()"
-                >开始模拟</el-button
-              >
+              <el-button type="primary" round @click="startSimulate()">{{
+                simulateText
+              }}</el-button>
             </div>
             <div v-show="ifSimulate">
-              <el-button type="primary" round @click="stopSimulate()"
-                >停止模拟</el-button
-              >
+              <el-button type="primary" round @click="stopSimulate()">{{
+                simulateText
+              }}</el-button>
             </div></el-col
           >
         </el-row>
@@ -152,6 +152,7 @@ import {
 import world from "@/map/world.json";
 import node from "@/image/svg.svg";
 import location from "@/image/location.svg";
+const simulateText = ref("启动模拟");
 const centerDialogVisible = ref(false);
 const ifSimulate = ref(false);
 const chartRef = ref<earthFlyLine.ChartScene | null>(null);
@@ -163,6 +164,7 @@ const trafficconfig = ref({
   align: ["center", "center", "center", "center"],
 });
 let lineID = 0;
+const fetchTime = 2000;
 function scrollUp() {
   nextTick(() => {
     const demo =
@@ -205,7 +207,6 @@ const ipconfig = {
 };
 
 let pollingInterval;
-const fetchTime = 2000;
 
 function startSimulate() {
   ifSimulate.value = true;
@@ -228,8 +229,20 @@ function startSimulate() {
       return Promise.all(responses.map((response) => response.json()));
     })
     .then(([backgroundData, simulateData]) => {
+      trafficconfig.value = {
+        header: ["发送", "目的", "域名", "时间"],
+        data: [],
+        align: ["center", "center", "center", "center"],
+      };
+
       console.log("Background data:", backgroundData);
       console.log("Simulate data:", simulateData);
+      stopPolling();
+      simulateText.value = "正在启动";
+      setTimeout(() => {
+        chartRef.value.remove("flyLine", "removeAll");
+        startPolling(1);
+      }, fetchTime * 2);
     })
     .catch((error) => {
       console.error("Error:", error);
@@ -256,52 +269,40 @@ function stopSimulate() {
       return Promise.all(responses.map((response) => response.json()));
     })
     .then(([backgroundData, simulateData]) => {
+      trafficconfig.value = {
+        header: ["发送", "目的", "域名", "时间"],
+        data: [],
+        align: ["center", "center", "center", "center"],
+      };
       console.log("Background data:", backgroundData);
       console.log("Simulate data:", simulateData);
+      stopPolling();
+      simulateText.value = "正在关闭";
+      setTimeout(() => {
+        chartRef.value.remove("flyLine", "removeAll");
+        startPolling(0);
+      }, fetchTime * 2);
     })
     .catch((error) => {
       console.error("Error:", error);
     });
 }
 
-function startPolling() {
-  Promise.all([
-    fetch("/api/backgorund?state=start", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    }),
-    fetch("/api/simulate?state=stop", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    }),
-  ])
-    .then((responses) => {
-      return Promise.all(responses.map((response) => response.json()));
-    })
-    .then(([backgroundData, simulateData]) => {
-      console.log("Background data:", backgroundData);
-      console.log("Simulate data:", simulateData);
-    })
-    .then((data) => {
-      pollingInterval = setInterval(() => {
-        fetchData();
-      }, fetchTime);
-    })
-    .catch((error) => {
-      console.error("Error:", error);
-    });
+function startPolling(mode) {
+  if (mode) simulateText.value = "关闭模拟";
+  else simulateText.value = "启动模拟";
+  pollingInterval = setInterval(() => {
+    if (mode) fetchData("?filter=202.112.51.127&since=1000000");
+    else fetchData("");
+  }, fetchTime);
 }
 
 function stopPolling() {
   clearInterval(pollingInterval);
 }
 
-function fetchData() {
-  fetch("/api/requests")
+function fetchData(params) {
+  fetch("/api/requests" + params)
     .then((response) => response.json())
     .then((res) => {
       const d = [];
@@ -354,7 +355,7 @@ function fetchData() {
                 },
                 flyLineStyle: {
                   color: "#42b983",
-                  duration: 3000, // 每个飞线动画持续
+                  duration: fetchTime, // 每个飞线动画持续
                   delay: 0, // 延迟时间由外部 setTimeout 控制
                   repeat: 0, // 循环次数为无限
                   onComplete: (params) => {
@@ -408,7 +409,7 @@ onMounted(() => {
             lon: item.location.longitude,
             style: {
               color: "white",
-              duration: 2000,
+              duration: 0,
               customFigure: {
                 texture: node,
               },
@@ -424,7 +425,7 @@ onMounted(() => {
 
       console.log("初始化地图成功");
 
-      startPolling();
+      startPolling(0);
     })
     .catch((error) => {
       console.error(error);

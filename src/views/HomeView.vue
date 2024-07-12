@@ -150,6 +150,7 @@ let bartimer1;
 let bartimer2;
 let bartimer3;
 let dialogShow = 0;
+const fetchTime = 2000;
 const reportTable = ref();
 const trafficTable = ref();
 const trafficData = ref([]);
@@ -182,8 +183,6 @@ function scrollUp(theref) {
     }, 100);
   });
 }
-
-const fetchTime = 2000;
 
 function startPolling() {
   Promise.all([
@@ -249,7 +248,6 @@ function fetchData() {
       };
       res.forEach((item, index) => {
         const delay = (index * fetchTime) / res.length; // 计算每个飞线动画的延迟时间
-
         setTimeout(() => {
           chartRef.value.addData("flyLine", [
             {
@@ -280,9 +278,9 @@ function fetchData() {
                 },
                 flyLineStyle: {
                   color: "#42b983",
-                  duration: 2000, // 每个飞线动画持续 2
-                  delay: 0, // 延迟时间
-                  repeat: 0, // 循环次数
+                  duration: fetchTime, // 每个飞线动画持续
+                  delay: 0, // 延迟时间由外部 setTimeout 控制
+                  repeat: 0, // 循环次数为无限
                   onComplete: (params) => {
                     chartRef.value.remove("flyLine", [
                       `${params.from.id}-${params.to.id}`,
@@ -473,7 +471,7 @@ onMounted(() => {
             lon: item.location.longitude,
             style: {
               color: "white",
-              duration: 2000,
+              duration: 0,
               customFigure: {
                 texture: node,
               },
