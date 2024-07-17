@@ -150,7 +150,7 @@ import {
   onBeforeUnmount,
 } from "vue";
 import world from "@/map/world.json";
-import node from "@/image/svg.svg";
+import node from "@/image/dataserver-security.svg";
 import location from "@/image/location.svg";
 const simulateText = ref("启动模拟");
 const centerDialogVisible = ref(false);
@@ -163,7 +163,6 @@ const trafficconfig = ref({
   data: [],
   align: ["center", "center", "center", "center"],
 });
-const timerList = [];
 let lineID = 0;
 const fetchTime = 2000;
 function scrollUp() {
@@ -191,18 +190,10 @@ function scrollUp() {
 }
 
 const ipconfig = {
-  header: ["列1", "列2", "列3"],
+  header: ["主机名", "主机IP", "所属网段"],
   data: [
-    ['<span style="color:#37a2da;">行1列1</span>', "行1列2", "行1列3"],
-    ["行2列1", '<span style="color:#32c5e9;">行2列2</span>', "行2列3"],
-    ["行3列1", "行3列2", '<span style="color:#67e0e3;">行3列3</span>'],
-    ["行4列1", '<span style="color:#9fe6b8;">行4列2</span>', "行4列3"],
-    ['<span style="color:#ffdb5c;">行5列1</span>', "行5列2", "行5列3"],
-    ["行6列1", '<span style="color:#ff9f7f;">行6列2</span>', "行6列3"],
-    ["行7列1", "行7列2", '<span style="color:#fb7293;">行7列3</span>'],
-    ["行8列1", '<span style="color:#e062ae;">行8列2</span>', "行8列3"],
-    ['<span style="color:#e690d1;">行9列1</span>', "行9列2", "行9列3"],
-    ["行10列1", '<span style="color:#e7bcf3;">行10列2</span>', "行10列3"],
+    ['模拟主机1', "202.112.47.212", "202.112.47.0/24"],
+
   ],
   align: ["center", "center", "center"],
 };
@@ -211,8 +202,7 @@ let pollingInterval;
 
 function startSimulate() {
   ifSimulate.value = true;
-  simulateText.value = "正在启动";
-  stopPolling();
+
   Promise.all([
     fetch("/api/backgorund?state=stop", {
       method: "POST",
@@ -239,10 +229,12 @@ function startSimulate() {
 
       console.log("Background data:", backgroundData);
       console.log("Simulate data:", simulateData);
-
-      timerList.forEach((item) => clearTimeout(item));
-      chartRef.value.remove("flyLine", "removeAll");
-      startPolling(1);
+      stopPolling();
+      simulateText.value = "正在启动";
+      setTimeout(() => {
+        chartRef.value.remove("flyLine", "removeAll");
+        startPolling(1);
+      }, fetchTime * 2);
     })
     .catch((error) => {
       console.error("Error:", error);
@@ -251,8 +243,6 @@ function startSimulate() {
 
 function stopSimulate() {
   ifSimulate.value = false;
-  simulateText.value = "正在关闭";
-  stopPolling();
   Promise.all([
     fetch("/api/backgorund?state=start", {
       method: "POST",
@@ -278,10 +268,12 @@ function stopSimulate() {
       };
       console.log("Background data:", backgroundData);
       console.log("Simulate data:", simulateData);
-
-      timerList.forEach((item) => clearTimeout(item));
-      chartRef.value.remove("flyLine", "removeAll");
-      startPolling(0);
+      stopPolling();
+      simulateText.value = "正在关闭";
+      setTimeout(() => {
+        chartRef.value.remove("flyLine", "removeAll");
+        startPolling(0);
+      }, fetchTime * 2);
     })
     .catch((error) => {
       console.error("Error:", error);
@@ -292,7 +284,7 @@ function startPolling(mode) {
   if (mode) simulateText.value = "关闭模拟";
   else simulateText.value = "启动模拟";
   pollingInterval = setInterval(() => {
-    if (mode) fetchData("?filter=202.112.51.127&since=1000000");
+    if (mode) fetchData("?filter=202.112.51.127&num=1000&since="+((new Date()).getTime()-2010)*1000);
     else fetchData("");
   }, fetchTime);
 }
@@ -325,7 +317,7 @@ function fetchData(params) {
       res.forEach((item, index) => {
         const delay = (index * fetchTime) / res.length; // 计算每个飞线动画的延迟时间
 
-        let timer = setTimeout(() => {
+        setTimeout(() => {
           chartRef.value.addData("flyLine", [
             {
               from: {
@@ -369,7 +361,6 @@ function fetchData(params) {
           ]);
           lineID += 2;
         }, delay);
-        timerList.push(timer);
       });
     })
     .catch((error) => {
