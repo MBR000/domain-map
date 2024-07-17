@@ -23,12 +23,12 @@
       </el-table> -->
         <dv-decoration-7
           style="width: 100%; height: 30px; color: #42b983; font-weight: 800"
-          >域名解析流量</dv-decoration-7
+          >域名解析流量(qps)</dv-decoration-7
         >
         <div id="bar1" style="width: 100%; height: 100px"></div>
         <dv-decoration-7
           style="width: 100%; height: 30px; color: #42b983; font-weight: 800"
-          >最常访问域名</dv-decoration-7
+          >最常访问域名(次)</dv-decoration-7
         >
         <div id="bar2" style="width: 100%; height: 100px"></div>
         <dv-decoration-7
@@ -115,8 +115,8 @@
   width: 240px;
   height: 180px;
   overflow: auto;
-  background-color: #011946;
-  color: #42b983;
+  background-color: #003b51;
+  color: white;
   border: 2px solid white;
 }
 
@@ -144,6 +144,7 @@ import location from "@/image/location.svg";
 const centerDialogVisible = ref(false);
 const nodeData = ref({});
 const nodeInfo = ref({});
+const nodeAll = ref([]);
 const chartRef = ref<earthFlyLine.ChartScene | null>(null);
 let pollingInterval;
 let bartimer1;
@@ -155,7 +156,7 @@ const reportTable = ref();
 const trafficTable = ref();
 const trafficData = ref([]);
 const trafficconfig = ref({
-  header: ["发送", "目的", "域名", "时间"],
+  header: ["递归IP", "节点名称", "域名", "时间"],
   data: [],
   align: ["center", "center", "center", "center"],
 });
@@ -231,7 +232,10 @@ function fetchData() {
       // console.log(res[0]);
       const d = [];
       d.push(res[0].Src);
-      d.push(res[0].Dst);
+      const nodeIndex = nodeAll.value
+        .map((item) => item.ip)
+        .findIndex((item) => item == res[0].Dst);
+      d.push(nodeAll.value[nodeIndex].name);
       d.push(res[0].Name);
       d.push(timestampToTime(res[0].Time));
       let trafficConfigData = [...trafficconfig.value.data];
@@ -242,7 +246,7 @@ function fetchData() {
       // 添加最新的一个
       trafficConfigData.push(d);
       trafficconfig.value = {
-        header: ["发送", "目的", "域名", "时间"],
+        header: ["递归IP", "节点名称", "域名", "时间"],
         data: trafficConfigData,
         align: ["center", "center", "center", "center"],
       };
@@ -311,8 +315,9 @@ onMounted(() => {
     fetch("/api/qps").then((response) => response.json()),
     fetch("/api/domains/fqdns").then((response) => response.json()),
     fetch("/api/domains/slds").then((response) => response.json()),
+    fetch("/api/resolvers").then((response) => response.json()),
   ])
-    .then(([nodes, qps, fqdnsData, sldsData]) => {
+    .then(([nodes, qps, fqdnsData, sldsData, resolvers]) => {
       const nodeconfigdata = [];
       for (let item of nodes) {
         const d = [];
@@ -321,8 +326,9 @@ onMounted(() => {
         d.push(item.software);
         nodeconfigdata.push(d);
       }
+      nodeAll.value = nodes;
       nodeData.value = {
-        header: ["名字", "位置", "软件"],
+        header: ["名称", "位置", "软件"],
         data: nodeconfigdata,
         align: ["center", "center", "center"],
       };
@@ -350,6 +356,11 @@ onMounted(() => {
           yAxis: {
             type: "category",
             data: qps.map((item) => item.ip),
+            axisLabel: {
+              textStyle: {
+                color: "white", //坐标的字体颜色
+              },
+            },
           },
           xAxis: {
             type: "value",
@@ -405,6 +416,9 @@ onMounted(() => {
             data: fqdnsData.map((item) => item.domain),
             axisLabel: {
               interval: 0,
+              textStyle: {
+                color: "white", //坐标的字体颜色
+              },
             },
           },
           xAxis: {
@@ -486,33 +500,115 @@ onMounted(() => {
           },
         ]);
       });
+      resolvers.map((item) => {
+        chartRef.value.addData("point", [
+          {
+            lat: item.loc.latitude,
+            lon: item.loc.longitude,
+            style: {
+              color: "white",
+              duration: 0,
+              // customFigure: {
+              //   texture: node,
+              // },
+            },
+          },
+        ]);
+      });
       const centerDialog = document.getElementById("centerDialog");
       console.log("初始化地图成功");
 
-      // chartRef.value.on("click", (event, params) => {
-      //   console.log(params.scatter);
-      //   //如果点击到点，出现弹窗展示
-      //   if (params && params.name === "scatter") {
-      //     nodeInfo.value.name = params?.userData.name;
-      //     nodeInfo.value.city = params?.userData.city;
-      //     nodeInfo.value.domain = params?.userData.domain;
-      //     nodeInfo.value.ip = params?.userData.ip;
-      //     nodeInfo.value.software = params?.userData.software;
-      //     nodeInfo.value.mechine = params?.userData.mechine;
-      //     nodeInfo.value.maxqps = params?.userData.maxqps;
-      //     if (event.clientX < 900) {
-      //       centerDialog.style.left = `${event.clientX}px`;
-      //     } else {
-      //       centerDialog.style.left = `${event.clientX - 240}px`;
-      //     }
-      //     if (event.clientY < 400) {
-      //       centerDialog.style.top = `${event.clientY}px`;
-      //     } else {
-      //       centerDialog.style.top = `${event.clientY - 180}px`;
-      //     }
-      //     centerDialogVisible.value = true;
-      //   }
-      // });
+      chartRef.value.on("click", (event, params) => {
+        console.log(params.scatter);
+        //如果点击到点，出现弹窗展示
+        if (params && params.name === "scatter") {
+          const index = nodes
+            .map((item) => item.name)
+            .findIndex((item) => item === params.userData.name);
+          console.log(index);
+          dialogShow = (index - 1 + nodes.length) % nodes.length;
+          chartRef.value.remove("road", "removeAll");
+          const roadData = [
+            {
+              id: `${(dialogShow + 1) % nodes.length}`, //必填
+              path: paths[(dialogShow + 1) % nodes.length],
+              style: {
+                flyLineStyle: {
+                  color: "white",
+                  duration: 0, // 一个完成动画所需时间(单位毫秒)，值越小动画速度越快
+                  delay: 0, //延迟执行时间默认
+                  repeat: 0, //循环次数 无限循环
+                },
+                pathStyle: {
+                  color: "white",
+                  show: false,
+                },
+              },
+            },
+          ];
+          chartRef.value.addData("road", roadData);
+
+          dialogShow += 1;
+          nodeInfo.value.name = nodes[dialogShow % nodes.length]?.name;
+          nodeInfo.value.city = nodes[dialogShow % nodes.length]?.city;
+          nodeInfo.value.domain = nodes[dialogShow % nodes.length]?.domain;
+          nodeInfo.value.ip = nodes[dialogShow % nodes.length]?.ip;
+          nodeInfo.value.software = nodes[dialogShow % nodes.length]?.software;
+          nodeInfo.value.mechine = nodes[dialogShow % nodes.length]?.mechine;
+          nodeInfo.value.maxqps = nodes[dialogShow % nodes.length]?.maxqps;
+          clearInterval(bartimer3);
+          // nodeInfo.value.name = params?.userData.name;
+          // nodeInfo.value.city = params?.userData.city;
+          // nodeInfo.value.domain = params?.userData.domain;
+          // nodeInfo.value.ip = params?.userData.ip;
+          // nodeInfo.value.software = params?.userData.software;
+          // nodeInfo.value.mechine = params?.userData.mechine;
+          // nodeInfo.value.maxqps = params?.userData.maxqps;
+          // if (event.clientX < 900) {
+          //   centerDialog.style.left = `${event.clientX}px`;
+          // } else {
+          //   centerDialog.style.left = `${event.clientX - 240}px`;
+          // }
+          // if (event.clientY < 400) {
+          //   centerDialog.style.top = `${event.clientY}px`;
+          // } else {
+          //   centerDialog.style.top = `${event.clientY - 180}px`;
+          // }
+          // centerDialogVisible.value = true;
+          bartimer3 = setInterval(() => {
+            const roadData = [
+              {
+                id: `${(dialogShow + 1) % nodes.length}`, //必填
+                path: paths[(dialogShow + 1) % nodes.length],
+                style: {
+                  flyLineStyle: {
+                    color: "white",
+                    duration: 0, // 一个完成动画所需时间(单位毫秒)，值越小动画速度越快
+                    delay: 0, //延迟执行时间默认
+                    repeat: 0, //循环次数 无限循环
+                  },
+                  pathStyle: {
+                    color: "white",
+                    show: false,
+                  },
+                },
+              },
+            ];
+            chartRef.value.remove("road", [`${dialogShow % nodes.length}`]);
+            chartRef.value.addData("road", roadData);
+
+            dialogShow += 1;
+            nodeInfo.value.name = nodes[dialogShow % nodes.length]?.name;
+            nodeInfo.value.city = nodes[dialogShow % nodes.length]?.city;
+            nodeInfo.value.domain = nodes[dialogShow % nodes.length]?.domain;
+            nodeInfo.value.ip = nodes[dialogShow % nodes.length]?.ip;
+            nodeInfo.value.software =
+              nodes[dialogShow % nodes.length]?.software;
+            nodeInfo.value.mechine = nodes[dialogShow % nodes.length]?.mechine;
+            nodeInfo.value.maxqps = nodes[dialogShow % nodes.length]?.maxqps;
+          }, 2000);
+        }
+      });
       const paths = nodes.map((item) => {
         return [
           {

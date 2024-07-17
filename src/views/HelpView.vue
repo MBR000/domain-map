@@ -17,13 +17,25 @@
           >
           <el-col :span="12" style="display: flex; justify-content: flex-end"
             ><div class="grid-content ep-bg-purple-light" />
-            <div v-show="!ifSimulate">
-              <el-button type="primary" round @click="startSimulate()">{{
-                simulateText
-              }}</el-button>
+            <div v-show="!ifSimulate1">
+              <el-button
+                v-if="!ifSimulate3 && !ifSimulate2"
+                type="primary"
+                round
+                @click="startSimulate(1)"
+                >{{ simulateText }}</el-button
+              >
+              <el-button
+                v-else
+                disabled
+                type="primary"
+                round
+                @click="startSimulate(1)"
+                >启动模拟</el-button
+              >
             </div>
-            <div v-show="ifSimulate">
-              <el-button type="primary" round @click="stopSimulate()">{{
+            <div v-show="ifSimulate1">
+              <el-button type="primary" round @click="stopSimulate(1)">{{
                 simulateText
               }}</el-button>
             </div></el-col
@@ -40,13 +52,25 @@
           >
           <el-col :span="12" style="display: flex; justify-content: flex-end"
             ><div class="grid-content ep-bg-purple-light" />
-            <div v-show="!ifSimulate">
-              <el-button type="primary" round @click="startSimulate()">{{
-                simulateText
-              }}</el-button>
+            <div v-show="!ifSimulate2">
+              <el-button
+                v-if="!ifSimulate1 && !ifSimulate3"
+                type="primary"
+                round
+                @click="startSimulate(2)"
+                >{{ simulateText }}</el-button
+              >
+              <el-button
+                v-else
+                disabled
+                type="primary"
+                round
+                @click="startSimulate(2)"
+                >启动模拟</el-button
+              >
             </div>
-            <div v-show="ifSimulate">
-              <el-button type="primary" round @click="stopSimulate()">{{
+            <div v-show="ifSimulate2">
+              <el-button type="primary" round @click="stopSimulate(2)">{{
                 simulateText
               }}</el-button>
             </div></el-col
@@ -63,13 +87,25 @@
           >
           <el-col :span="12" style="display: flex; justify-content: flex-end"
             ><div class="grid-content ep-bg-purple-light" />
-            <div v-show="!ifSimulate">
-              <el-button type="primary" round @click="startSimulate()">{{
-                simulateText
-              }}</el-button>
+            <div v-show="!ifSimulate3">
+              <el-button
+                v-if="!ifSimulate1 && !ifSimulate2"
+                type="primary"
+                round
+                @click="startSimulate(3)"
+                >{{ simulateText }}</el-button
+              >
+              <el-button
+                v-else
+                disabled
+                type="primary"
+                round
+                @click="startSimulate(3)"
+                >启动模拟</el-button
+              >
             </div>
-            <div v-show="ifSimulate">
-              <el-button type="primary" round @click="stopSimulate()">{{
+            <div v-show="ifSimulate3">
+              <el-button type="primary" round @click="stopSimulate(3)">{{
                 simulateText
               }}</el-button>
             </div></el-col
@@ -154,16 +190,21 @@ import node from "@/image/dataserver-security.svg";
 import location from "@/image/location.svg";
 const simulateText = ref("启动模拟");
 const centerDialogVisible = ref(false);
-const ifSimulate = ref(false);
+const ifSimulate1 = ref(false);
+const ifSimulate2 = ref(false);
+const ifSimulate3 = ref(false);
 const chartRef = ref<earthFlyLine.ChartScene | null>(null);
 const nodeInfo = ref({});
 const reportTable = ref();
+const nodeAll = ref([]);
+
 const trafficconfig = ref({
-  header: ["发送", "目的", "域名", "时间"],
+  header: ["递归IP", "节点名称", "域名", "时间"],
   data: [],
   align: ["center", "center", "center", "center"],
 });
 let lineID = 0;
+let simLineID = 100000000;
 const fetchTime = 2000;
 function scrollUp() {
   nextTick(() => {
@@ -191,17 +232,16 @@ function scrollUp() {
 
 const ipconfig = {
   header: ["主机名", "主机IP", "所属网段"],
-  data: [
-    ['模拟主机1', "202.112.47.212", "202.112.47.0/24"],
-
-  ],
+  data: [["模拟主机1", "202.112.47.212", "202.112.47.0/24"]],
   align: ["center", "center", "center"],
 };
 
 let pollingInterval;
 
-function startSimulate() {
-  ifSimulate.value = true;
+function startSimulate(num) {
+  if (num === 1) ifSimulate1.value = true;
+  else if (num === 2) ifSimulate2.value = true;
+  else if (num === 3) ifSimulate3.value = true;
 
   Promise.all([
     fetch("/api/backgorund?state=stop", {
@@ -216,13 +256,14 @@ function startSimulate() {
         "Content-Type": "application/json",
       },
     }),
+    fetch("/api/simresolvers"),
   ])
     .then((responses) => {
       return Promise.all(responses.map((response) => response.json()));
     })
-    .then(([backgroundData, simulateData]) => {
+    .then(([backgroundData, simulateData, simresolver]) => {
       trafficconfig.value = {
-        header: ["发送", "目的", "域名", "时间"],
+        header: ["递归IP", "节点名称", "域名", "时间"],
         data: [],
         align: ["center", "center", "center", "center"],
       };
@@ -235,14 +276,31 @@ function startSimulate() {
         chartRef.value.remove("flyLine", "removeAll");
         startPolling(1);
       }, fetchTime * 2);
+
+      console.log(simresolver);
+
+      chartRef.value.addData("point", [
+        {
+          id: `${10000000}`,
+          lat: simresolver.loc.latitude,
+          lon: simresolver.loc.longitude,
+          style: {
+            color: "red",
+            duration: 0,
+            // customFigure: {
+            //   texture: node,
+            // },
+          },
+        },
+      ]);
     })
+
     .catch((error) => {
       console.error("Error:", error);
     });
 }
 
-function stopSimulate() {
-  ifSimulate.value = false;
+function stopSimulate(num) {
   Promise.all([
     fetch("/api/backgorund?state=start", {
       method: "POST",
@@ -262,7 +320,7 @@ function stopSimulate() {
     })
     .then(([backgroundData, simulateData]) => {
       trafficconfig.value = {
-        header: ["发送", "目的", "域名", "时间"],
+        header: ["递归IP", "节点名称", "域名", "时间"],
         data: [],
         align: ["center", "center", "center", "center"],
       };
@@ -272,7 +330,13 @@ function stopSimulate() {
       simulateText.value = "正在关闭";
       setTimeout(() => {
         chartRef.value.remove("flyLine", "removeAll");
+
+        chartRef.value.remove("point", [`${10000000}`]);
+
         startPolling(0);
+        if (num === 1) ifSimulate1.value = false;
+        else if (num === 2) ifSimulate2.value = false;
+        else if (num === 3) ifSimulate3.value = false;
       }, fetchTime * 2);
     })
     .catch((error) => {
@@ -284,8 +348,13 @@ function startPolling(mode) {
   if (mode) simulateText.value = "关闭模拟";
   else simulateText.value = "启动模拟";
   pollingInterval = setInterval(() => {
-    if (mode) fetchData("?filter=202.112.51.127&num=1000&since="+((new Date()).getTime()-2010)*1000);
-    else fetchData("");
+    if (mode) {
+      fetchData(
+        "?filter=3.22.98.109&num=1000&since=" +
+          (new Date().getTime() - 2010) * 1000
+      );
+      fetchData("");
+    } else fetchData("");
   }, fetchTime);
 }
 
@@ -299,7 +368,11 @@ function fetchData(params) {
     .then((res) => {
       const d = [];
       d.push(res[0].Src);
-      d.push(res[0].Dst);
+      const nodeIndex = nodeAll.value
+        .map((item) => item.ip)
+        .findIndex((item) => item == res[0].Dst);
+      d.push(nodeAll.value[nodeIndex].name);
+
       d.push(res[0].Name);
       d.push(timestampToTime(res[0].Time));
       let trafficConfigData = [...trafficconfig.value.data];
@@ -310,7 +383,7 @@ function fetchData(params) {
       // 添加最新的一个
       trafficConfigData.push(d);
       trafficconfig.value = {
-        header: ["发送", "目的", "域名", "时间"],
+        header: ["递归IP", "节点名称", "域名", "时间"],
         data: trafficConfigData,
         align: ["center", "center", "center", "center"],
       };
@@ -321,7 +394,7 @@ function fetchData(params) {
           chartRef.value.addData("flyLine", [
             {
               from: {
-                id: lineID,
+                id: params ? simLineID : lineID,
                 lon: item.From.longitude,
                 lat: item.From.latitude,
                 style: {
@@ -331,7 +404,7 @@ function fetchData(params) {
                 },
               },
               to: {
-                id: lineID + 1,
+                id: params ? simLineID + 1 : lineID + 1,
                 lon: item.To.longitude,
                 lat: item.To.latitude,
                 style: {
@@ -342,11 +415,11 @@ function fetchData(params) {
               },
               style: {
                 pathStyle: {
-                  color: "#42b983",
+                  color: params ? "yellow" : "#42b983",
                   show: false,
                 },
                 flyLineStyle: {
-                  color: "#42b983",
+                  color: params ? "yellow" : "#42b983",
                   duration: fetchTime, // 每个飞线动画持续
                   delay: 0, // 延迟时间由外部 setTimeout 控制
                   repeat: 0, // 循环次数为无限
@@ -359,7 +432,8 @@ function fetchData(params) {
               },
             },
           ]);
-          lineID += 2;
+          if (params) simLineID += 2;
+          else lineID += 2;
         }, delay);
       });
     })
@@ -370,9 +444,13 @@ function fetchData(params) {
 }
 
 onMounted(() => {
-  Promise.all([fetch("/api/nodes").then((response) => response.json())])
-    .then(([nodes]) => {
+  Promise.all([
+    fetch("/api/nodes").then((response) => response.json()),
+    fetch("/api/resolvers").then((response) => response.json()),
+  ])
+    .then(([nodes, resolvers]) => {
       // scrollUp();
+      nodeAll.value = nodes;
       earthFlyLine.registerMap("world", world);
       const dom = document.getElementById("container2");
       let width = dom.offsetWidth;
@@ -414,7 +492,21 @@ onMounted(() => {
           },
         ]);
       });
-
+      resolvers.map((item) => {
+        chartRef.value.addData("point", [
+          {
+            lat: item.loc.latitude,
+            lon: item.loc.longitude,
+            style: {
+              color: "white",
+              duration: 0,
+              // customFigure: {
+              //   texture: node,
+              // },
+            },
+          },
+        ]);
+      });
       console.log("初始化地图成功");
 
       startPolling(0);
