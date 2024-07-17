@@ -139,7 +139,7 @@ import {
   onBeforeUnmount,
 } from "vue";
 import world from "@/map/world.json";
-import node from "@/image/svg.svg";
+import node from "@/image/dataserver-security.svg";
 import location from "@/image/location.svg";
 const centerDialogVisible = ref(false);
 const nodeData = ref({});
