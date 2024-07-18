@@ -207,30 +207,6 @@ const trafficconfig = ref({
 let lineID = 0;
 let simLineID = 100000000;
 const fetchTime = 2000;
-function scrollUp() {
-  nextTick(() => {
-    const demo =
-      reportTable.value.$refs.bodyWrapper.getElementsByClassName(
-        "el-scrollbar__wrap"
-      )[0];
-    const tableScroll = ref(true);
-    demo.addEventListener("mouseover", () => {
-      tableScroll.value = false;
-    });
-    demo.addEventListener("mouseout", () => {
-      tableScroll.value = true;
-    });
-    setInterval(() => {
-      if (tableScroll.value) {
-        demo.scrollTop += 10;
-        if (demo.clientHeight + demo.scrollTop === demo.scrollHeight) {
-          demo.scrollTop = 0;
-        }
-      }
-    }, 100);
-  });
-}
-
 const ipconfig = {
   header: ["主机名", "主机IP", "所属网段"],
   data: [["模拟主机1", "202.112.47.212", "202.112.47.0/24"]],
@@ -243,7 +219,7 @@ function startSimulate(num) {
   if (num === 1) ifSimulate1.value = true;
   else if (num === 2) ifSimulate2.value = true;
   else if (num === 3) ifSimulate3.value = true;
-
+  simulateText.value = "正在启动";
   Promise.all([
     fetch("/api/backgorund?state=stop", {
       method: "POST",
@@ -263,21 +239,21 @@ function startSimulate(num) {
       return Promise.all(responses.map((response) => response.json()));
     })
     .then(([backgroundData, simulateData, simresolver]) => {
-      trafficconfig.value = {
-        header: ["递归IP", "节点名称", "域名", "时间"],
-        data: [],
-        align: ["center", "center", "center", "center"],
-      };
+      // trafficconfig.value = {
+      //   header: ["递归IP", "节点名称", "域名", "时间"],
+      //   data: [],
+      //   align: ["center", "center", "center", "center"],
+      // };
 
       console.log("Background data:", backgroundData);
       console.log("Simulate data:", simulateData);
       stopPolling();
-      simulateText.value = "正在启动";
-      setTimeout(() => {
-        chartRef.value.remove("flyLine", "removeAll");
-        startPolling(1);
-      }, fetchTime * 2);
 
+      // setTimeout(() => {
+      //   chartRef.value.remove("flyLine", "removeAll");
+      //   startPolling(1);
+      // }, fetchTime * 2);
+      startPolling(1);
       console.log(simresolver);
 
       chartRef.value.addData("point", [
@@ -302,6 +278,7 @@ function startSimulate(num) {
 }
 
 function stopSimulate(num) {
+  simulateText.value = "正在关闭";
   Promise.all([
     fetch("/api/backgorund?state=start", {
       method: "POST",
@@ -320,25 +297,31 @@ function stopSimulate(num) {
       return Promise.all(responses.map((response) => response.json()));
     })
     .then(([backgroundData, simulateData]) => {
-      trafficconfig.value = {
-        header: ["递归IP", "节点名称", "域名", "时间"],
-        data: [],
-        align: ["center", "center", "center", "center"],
-      };
+      // trafficconfig.value = {
+      //   header: ["递归IP", "节点名称", "域名", "时间"],
+      //   data: [],
+      //   align: ["center", "center", "center", "center"],
+      // };
       console.log("Background data:", backgroundData);
       console.log("Simulate data:", simulateData);
       stopPolling();
-      simulateText.value = "正在关闭";
-      setTimeout(() => {
-        chartRef.value.remove("flyLine", "removeAll");
 
-        chartRef.value.remove("point", [`${10000000}`]);
+      // setTimeout(() => {
+      //   chartRef.value.remove("flyLine", "removeAll");
 
-        startPolling(0);
-        if (num === 1) ifSimulate1.value = false;
-        else if (num === 2) ifSimulate2.value = false;
-        else if (num === 3) ifSimulate3.value = false;
-      }, fetchTime * 2);
+      //   chartRef.value.remove("point", [`${10000000}`]);
+
+      //   startPolling(0);
+      //   if (num === 1) ifSimulate1.value = false;
+      //   else if (num === 2) ifSimulate2.value = false;
+      //   else if (num === 3) ifSimulate3.value = false;
+      // }, fetchTime * 2);
+      chartRef.value.remove("point", [`${10000000}`]);
+
+      startPolling(0);
+      if (num === 1) ifSimulate1.value = false;
+      else if (num === 2) ifSimulate2.value = false;
+      else if (num === 3) ifSimulate3.value = false;
     })
     .catch((error) => {
       console.error("Error:", error);
