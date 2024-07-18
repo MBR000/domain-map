@@ -141,6 +141,7 @@ import {
 import world from "@/map/world.json";
 import node from "@/image/dataserver-security.svg";
 import location from "@/image/location.svg";
+import resolver_node from "@/image/resolver.svg";
 const centerDialogVisible = ref(false);
 const nodeData = ref({});
 const nodeInfo = ref({});
@@ -506,11 +507,11 @@ onMounted(() => {
             lat: item.loc.latitude,
             lon: item.loc.longitude,
             style: {
-              color: "white",
+              color: "green",
               duration: 0,
-              // customFigure: {
-              //   texture: node,
-              // },
+              customFigure: {
+                texture: resolver_node,
+              },
             },
           },
         ]);

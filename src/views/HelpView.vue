@@ -188,6 +188,7 @@ import {
 import world from "@/map/world.json";
 import node from "@/image/dataserver-security.svg";
 import location from "@/image/location.svg";
+import resolver_node from "@/image/resolver.svg";
 const simulateText = ref("启动模拟");
 const centerDialogVisible = ref(false);
 const ifSimulate1 = ref(false);
@@ -287,9 +288,9 @@ function startSimulate(num) {
           style: {
             color: "red",
             duration: 0,
-            // customFigure: {
-            //   texture: node,
-            // },
+            customFigure: {
+              texture: resolver_node,
+            },
           },
         },
       ]);
@@ -351,7 +352,7 @@ function startPolling(mode) {
     if (mode) {
       fetchData(
         "?filter=3.22.98.109&num=1000&since=" +
-          (new Date().getTime() - 2010) * 1000
+          (new Date().getTime() - 2200) * 1000
       );
       fetchData("");
     } else fetchData("");
@@ -498,11 +499,11 @@ onMounted(() => {
             lat: item.loc.latitude,
             lon: item.loc.longitude,
             style: {
-              color: "white",
+              color: "green",
               duration: 0,
-              // customFigure: {
-              //   texture: node,
-              // },
+              customFigure: {
+                texture: resolver_node,
+              },
             },
           },
         ]);
