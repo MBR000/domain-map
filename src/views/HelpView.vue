@@ -221,12 +221,12 @@ function startSimulate(num) {
   else if (num === 3) ifSimulate3.value = true;
   simulateText.value = "正在启动";
   Promise.all([
-    fetch("/api/backgorund?state=stop", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    }),
+    // fetch("/api/backgorund?state=stop", {
+    //   method: "POST",
+    //   headers: {
+    //     "Content-Type": "application/json",
+    //   },
+    // }),
     fetch("/api/simulate?state=start", {
       method: "POST",
       headers: {
@@ -238,14 +238,15 @@ function startSimulate(num) {
     .then((responses) => {
       return Promise.all(responses.map((response) => response.json()));
     })
-    .then(([backgroundData, simulateData, simresolver]) => {
+    .then(([simulateData, simresolver]) => {
+    // .then(([backgroundData, simulateData, simresolver]) => {
       // trafficconfig.value = {
       //   header: ["递归IP", "节点名称", "域名", "时间"],
       //   data: [],
       //   align: ["center", "center", "center", "center"],
       // };
 
-      console.log("Background data:", backgroundData);
+      // console.log("Background data:", backgroundData);
       console.log("Simulate data:", simulateData);
       stopPolling();
 
