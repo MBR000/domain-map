@@ -141,7 +141,7 @@ import {
 import world from "@/map/world.json";
 import node from "@/image/dataserver-security.svg";
 import location from "@/image/location.svg";
-import resolver_node from "@/image/resolver.svg";
+import resolver_node from "@/image/resolver2.svg";
 const centerDialogVisible = ref(false);
 const nodeData = ref({});
 const nodeInfo = ref({});
@@ -156,12 +156,13 @@ const fetchTime = 2000;
 const reportTable = ref();
 const trafficTable = ref();
 const trafficData = ref([]);
+// const scrollBoard = ref(null);
 const trafficconfig = ref({
   header: ["递归IP", "节点名称", "域名", "时间"],
   data: [],
   align: ["center", "center", "center", "center"],
 });
-let lineID = 0;
+let lineID = 1;
 function scrollUp(theref) {
   nextTick(() => {
     const demo =
@@ -226,34 +227,69 @@ function stopPolling() {
 }
 
 function fetchData() {
-  fetch("/api/requests")
+  fetch("/api/requests?filter=resolvers")
     .then((response) => response.json())
     .then((res) => {
       // trafficData.value = res;
       // console.log(res[0]);
       const d = [];
       d.push(res[0].Src);
-      const nodeIndex = nodeAll.value
+      let nodeIndex = nodeAll.value
         .map((item) => item.ip)
         .findIndex((item) => item == res[0].Dst);
-      d.push(nodeAll.value[nodeIndex].name);
-      d.push(res[0].Name);
-      d.push(timestampToTime(res[0].Time));
-      let trafficConfigData = [...trafficconfig.value.data];
-      // 如果trafficConfigData已经有10个元素,则移除最早的一个
-      if (trafficConfigData.length >= 5) {
-        trafficConfigData.shift();
+      // console.log(nodeAll.value[nodeIndex], nodeIndex);
+      // if (nodeIndex == -1) console.log(res[0].Dst);
+      if (nodeIndex !== -1) {
+        d.push(nodeAll.value[nodeIndex].name);
+        d.push(res[0].Name);
+        d.push(timestampToTime(res[0].Time));
+        let trafficConfigData = [...trafficconfig.value.data];
+        // 如果trafficConfigData已经有10个元素,则移除最早的一个
+        if (trafficConfigData.length >= 5) {
+          trafficConfigData.shift();
+        }
+        // 添加最新的一个
+        trafficConfigData.push(d);
+        trafficconfig.value = {
+          header: ["递归IP", "节点名称", "域名", "时间"],
+          data: trafficConfigData,
+          align: ["center", "center", "center", "center"],
+        };
       }
-      // 添加最新的一个
-      trafficConfigData.push(d);
-      trafficconfig.value = {
-        header: ["递归IP", "节点名称", "域名", "时间"],
-        data: trafficConfigData,
-        align: ["center", "center", "center", "center"],
-      };
-      res.forEach((item, index) => {
-        const delay = (index * fetchTime) / res.length; // 计算每个飞线动画的延迟时间
+
+      const d2 = [];
+      d2.push(res[1].Src);
+      nodeIndex = nodeAll.value
+        .map((item) => item.ip)
+        .findIndex((item) => item == res[1].Dst);
+      // console.log(nodeAll.value[nodeIndex], nodeIndex);
+      // if (nodeIndex == -1) console.log(res[1].Dst);
+      if (nodeIndex !== -1) {
+        d2.push(nodeAll.value[nodeIndex].name);
+        d2.push(res[1].Name);
+        d2.push(timestampToTime(res[1].Time));
         setTimeout(() => {
+          let trafficConfigData = [...trafficconfig.value.data];
+          // 如果trafficConfigData已经有10个元素,则移除最早的一个
+          if (trafficConfigData.length >= 5) {
+            trafficConfigData.shift();
+          }
+          // 添加最新的一个
+          trafficConfigData.push(d2);
+          trafficconfig.value = {
+            header: ["递归IP", "节点名称", "域名", "时间"],
+            data: trafficConfigData,
+            align: ["center", "center", "center", "center"],
+          };
+        }, fetchTime / 2);
+      }
+
+      res.forEach((item, index) => {
+        // const delay = 0;
+        const delay = ((index + 1) * fetchTime) / res.length;
+        // 计算每个飞线动画的延迟时间
+        setTimeout(() => {
+          // console.log(`generate ${lineID}-${lineID + 1}`);
           chartRef.value.addData("flyLine", [
             {
               from: {
@@ -286,10 +322,15 @@ function fetchData() {
                   duration: fetchTime, // 每个飞线动画持续
                   delay: 0, // 延迟时间由外部 setTimeout 控制
                   repeat: 0, // 循环次数为无限
-                  onComplete: (params) => {
+                  onComplete: (p) => {
+                    // console.log(`remove ${p.from.id}-${p.to.id}`);
                     chartRef.value.remove("flyLine", [
-                      `${params.from.id}-${params.to.id}`,
+                      `${p.from.id}-${p.to.id}`,
                     ]);
+                    if (index === res.length - 1) {
+                      console.log("remove");
+                      chartRef.value.remove("flyLine", ["0-1"]);
+                    }
                   },
                 },
               },
@@ -520,7 +561,8 @@ onMounted(() => {
       console.log("初始化地图成功");
 
       chartRef.value.on("click", (event, params) => {
-        console.log(params.scatter);
+        console.log(params.userData);
+        // console.log(params.scatter);
         //如果点击到点，出现弹窗展示
         if (params && params.name === "scatter") {
           const index = nodes

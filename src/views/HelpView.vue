@@ -188,7 +188,7 @@ import {
 import world from "@/map/world.json";
 import node from "@/image/dataserver-security.svg";
 import location from "@/image/location.svg";
-import resolver_node from "@/image/resolver.svg";
+import resolver_node from "@/image/resolver2.svg";
 const simulateText = ref("启动模拟");
 const centerDialogVisible = ref(false);
 const ifSimulate1 = ref(false);
@@ -204,7 +204,7 @@ const trafficconfig = ref({
   data: [],
   align: ["center", "center", "center", "center"],
 });
-let lineID = 0;
+let lineID = 1;
 let simLineID = 100000000;
 const fetchTime = 2000;
 const ipconfig = {
@@ -337,8 +337,8 @@ function startPolling(mode) {
         "?filter=3.22.98.109&num=1000&since=" +
           (new Date().getTime() - 2200) * 1000
       );
-      fetchData("");
-    } else fetchData("");
+      fetchData("?filter=resolvers");
+    } else fetchData("?filter=resolvers");
   }, fetchTime);
 }
 
@@ -352,7 +352,7 @@ function fetchData(params) {
     .then((res) => {
       const d = [];
       d.push(res[0].Src);
-      const nodeIndex = nodeAll.value
+      let nodeIndex = nodeAll.value
         .map((item) => item.ip)
         .findIndex((item) => item == res[0].Dst);
       d.push(nodeAll.value[nodeIndex].name);
@@ -371,6 +371,30 @@ function fetchData(params) {
         data: trafficConfigData,
         align: ["center", "center", "center", "center"],
       };
+
+      const d2 = [];
+      d2.push(res[1].Src);
+      nodeIndex = nodeAll.value
+        .map((item) => item.ip)
+        .findIndex((item) => item == res[1].Dst);
+      d2.push(nodeAll.value[nodeIndex].name);
+      d2.push(res[1].Name);
+      d2.push(timestampToTime(res[1].Time));
+      setTimeout(() => {
+        let trafficConfigData = [...trafficconfig.value.data];
+        // 如果trafficConfigData已经有10个元素,则移除最早的一个
+        if (trafficConfigData.length >= 5) {
+          trafficConfigData.shift();
+        }
+        // 添加最新的一个
+        trafficConfigData.push(d2);
+        trafficconfig.value = {
+          header: ["递归IP", "节点名称", "域名", "时间"],
+          data: trafficConfigData,
+          align: ["center", "center", "center", "center"],
+        };
+      }, fetchTime / 2);
+
       res.forEach((item, index) => {
         const delay = (index * fetchTime) / res.length; // 计算每个飞线动画的延迟时间
 
@@ -378,7 +402,7 @@ function fetchData(params) {
           chartRef.value.addData("flyLine", [
             {
               from: {
-                id: params ? simLineID : lineID,
+                id: params !== "?filter=resolvers" ? simLineID : lineID,
                 lon: item.From.longitude,
                 lat: item.From.latitude,
                 style: {
@@ -388,7 +412,7 @@ function fetchData(params) {
                 },
               },
               to: {
-                id: params ? simLineID + 1 : lineID + 1,
+                id: params !== "?filter=resolvers" ? simLineID + 1 : lineID + 1,
                 lon: item.To.longitude,
                 lat: item.To.latitude,
                 style: {
@@ -399,11 +423,11 @@ function fetchData(params) {
               },
               style: {
                 pathStyle: {
-                  color: params ? "yellow" : "#42b983",
+                  color: params !== "?filter=resolvers" ? "yellow" : "#42b983",
                   show: false,
                 },
                 flyLineStyle: {
-                  color: params ? "yellow" : "#42b983",
+                  color: params !== "?filter=resolvers" ? "yellow" : "#42b983",
                   duration: fetchTime, // 每个飞线动画持续
                   delay: 0, // 延迟时间由外部 setTimeout 控制
                   repeat: 0, // 循环次数为无限
@@ -416,7 +440,7 @@ function fetchData(params) {
               },
             },
           ]);
-          if (params) simLineID += 2;
+          if (params != "?filter=resolvers") simLineID += 2;
           else lineID += 2;
         }, delay);
       });
