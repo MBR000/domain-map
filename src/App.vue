@@ -12,7 +12,7 @@
         <dv-decoration-5 style="width: 600px; height: 40px" />
       </div>
       <dv-decoration-11 style="width: 80%; height: 80px; margin-left: 10%"
-        ><h1 class="title">境内外一体化抗停服域名解析系统</h1></dv-decoration-11
+        ><h1 class="title">全球隐蔽域名解析系统</h1></dv-decoration-11
       >
     </el-col>
   </el-row>

@@ -239,7 +239,7 @@ function startSimulate(num) {
       return Promise.all(responses.map((response) => response.json()));
     })
     .then(([simulateData, simresolver]) => {
-    // .then(([backgroundData, simulateData, simresolver]) => {
+      // .then(([backgroundData, simulateData, simresolver]) => {
       // trafficconfig.value = {
       //   header: ["递归IP", "节点名称", "域名", "时间"],
       //   data: [],
