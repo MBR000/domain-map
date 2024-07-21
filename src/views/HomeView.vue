@@ -59,7 +59,12 @@
       </div>
     </el-col>
 
-    <div id="centerDialog" class="modal" v-show="centerDialogVisible">
+    <div
+      id="centerDialog"
+      class="modal"
+      v-show="centerDialogVisible"
+      @click="centerDialogVisible = false"
+    >
       <table class="text-left">
         <tr>
           <td>IP:</td>
@@ -103,7 +108,7 @@
 
 #container2 {
   width: 100%;
-  margin-top: -20vh;
+  margin-top: -25vh;
 }
 
 .modal {
@@ -570,26 +575,26 @@ onMounted(() => {
             .findIndex((item) => item === params.userData.name);
           console.log(index);
           dialogShow = (index - 1 + nodes.length) % nodes.length;
-          chartRef.value.remove("road", "removeAll");
-          const roadData = [
-            {
-              id: `${(dialogShow + 1) % nodes.length}`, //必填
-              path: paths[(dialogShow + 1) % nodes.length],
-              style: {
-                flyLineStyle: {
-                  color: "white",
-                  duration: 0, // 一个完成动画所需时间(单位毫秒)，值越小动画速度越快
-                  delay: 0, //延迟执行时间默认
-                  repeat: 0, //循环次数 无限循环
-                },
-                pathStyle: {
-                  color: "white",
-                  show: false,
-                },
-              },
-            },
-          ];
-          chartRef.value.addData("road", roadData);
+          // chartRef.value.remove("road", "removeAll");
+          // const roadData = [
+          //   {
+          //     id: `${(dialogShow + 1) % nodes.length}`, //必填
+          //     path: paths[(dialogShow + 1) % nodes.length],
+          //     style: {
+          //       flyLineStyle: {
+          //         color: "white",
+          //         duration: 0, // 一个完成动画所需时间(单位毫秒)，值越小动画速度越快
+          //         delay: 0, //延迟执行时间默认
+          //         repeat: 0, //循环次数 无限循环
+          //       },
+          //       pathStyle: {
+          //         color: "white",
+          //         show: false,
+          //       },
+          //     },
+          //   },
+          // ];
+          // chartRef.value.addData("road", roadData);
 
           dialogShow += 1;
           nodeInfo.value.name = nodes[dialogShow % nodes.length]?.name;
@@ -599,57 +604,57 @@ onMounted(() => {
           nodeInfo.value.software = nodes[dialogShow % nodes.length]?.software;
           nodeInfo.value.mechine = nodes[dialogShow % nodes.length]?.mechine;
           nodeInfo.value.maxqps = nodes[dialogShow % nodes.length]?.maxqps;
-          clearInterval(bartimer3);
-          // nodeInfo.value.name = params?.userData.name;
-          // nodeInfo.value.city = params?.userData.city;
-          // nodeInfo.value.domain = params?.userData.domain;
-          // nodeInfo.value.ip = params?.userData.ip;
-          // nodeInfo.value.software = params?.userData.software;
-          // nodeInfo.value.mechine = params?.userData.mechine;
-          // nodeInfo.value.maxqps = params?.userData.maxqps;
-          // if (event.clientX < 900) {
-          //   centerDialog.style.left = `${event.clientX}px`;
-          // } else {
-          //   centerDialog.style.left = `${event.clientX - 240}px`;
-          // }
-          // if (event.clientY < 400) {
-          //   centerDialog.style.top = `${event.clientY}px`;
-          // } else {
-          //   centerDialog.style.top = `${event.clientY - 180}px`;
-          // }
-          // centerDialogVisible.value = true;
-          bartimer3 = setInterval(() => {
-            const roadData = [
-              {
-                id: `${(dialogShow + 1) % nodes.length}`, //必填
-                path: paths[(dialogShow + 1) % nodes.length],
-                style: {
-                  flyLineStyle: {
-                    color: "white",
-                    duration: 0, // 一个完成动画所需时间(单位毫秒)，值越小动画速度越快
-                    delay: 0, //延迟执行时间默认
-                    repeat: 0, //循环次数 无限循环
-                  },
-                  pathStyle: {
-                    color: "white",
-                    show: false,
-                  },
-                },
-              },
-            ];
-            chartRef.value.remove("road", [`${dialogShow % nodes.length}`]);
-            chartRef.value.addData("road", roadData);
+          // clearInterval(bartimer3);
+          nodeInfo.value.name = params?.userData.name;
+          nodeInfo.value.city = params?.userData.city;
+          nodeInfo.value.domain = params?.userData.domain;
+          nodeInfo.value.ip = params?.userData.ip;
+          nodeInfo.value.software = params?.userData.software;
+          nodeInfo.value.mechine = params?.userData.mechine;
+          nodeInfo.value.maxqps = params?.userData.maxqps;
+          if (event.clientX < 900) {
+            centerDialog.style.left = `${event.clientX}px`;
+          } else {
+            centerDialog.style.left = `${event.clientX - 240}px`;
+          }
+          if (event.clientY < 400) {
+            centerDialog.style.top = `${event.clientY}px`;
+          } else {
+            centerDialog.style.top = `${event.clientY - 180}px`;
+          }
+          centerDialogVisible.value = true;
+          // bartimer3 = setInterval(() => {
+          //   const roadData = [
+          //     {
+          //       id: `${(dialogShow + 1) % nodes.length}`, //必填
+          //       path: paths[(dialogShow + 1) % nodes.length],
+          //       style: {
+          //         flyLineStyle: {
+          //           color: "white",
+          //           duration: 0, // 一个完成动画所需时间(单位毫秒)，值越小动画速度越快
+          //           delay: 0, //延迟执行时间默认
+          //           repeat: 0, //循环次数 无限循环
+          //         },
+          //         pathStyle: {
+          //           color: "white",
+          //           show: false,
+          //         },
+          //       },
+          //     },
+          //   ];
+          //   chartRef.value.remove("road", [`${dialogShow % nodes.length}`]);
+          //   chartRef.value.addData("road", roadData);
 
-            dialogShow += 1;
-            nodeInfo.value.name = nodes[dialogShow % nodes.length]?.name;
-            nodeInfo.value.city = nodes[dialogShow % nodes.length]?.city;
-            nodeInfo.value.domain = nodes[dialogShow % nodes.length]?.domain;
-            nodeInfo.value.ip = nodes[dialogShow % nodes.length]?.ip;
-            nodeInfo.value.software =
-              nodes[dialogShow % nodes.length]?.software;
-            nodeInfo.value.mechine = nodes[dialogShow % nodes.length]?.mechine;
-            nodeInfo.value.maxqps = nodes[dialogShow % nodes.length]?.maxqps;
-          }, 2000);
+          //   dialogShow += 1;
+          //   nodeInfo.value.name = nodes[dialogShow % nodes.length]?.name;
+          //   nodeInfo.value.city = nodes[dialogShow % nodes.length]?.city;
+          //   nodeInfo.value.domain = nodes[dialogShow % nodes.length]?.domain;
+          //   nodeInfo.value.ip = nodes[dialogShow % nodes.length]?.ip;
+          //   nodeInfo.value.software =
+          //     nodes[dialogShow % nodes.length]?.software;
+          //   nodeInfo.value.mechine = nodes[dialogShow % nodes.length]?.mechine;
+          //   nodeInfo.value.maxqps = nodes[dialogShow % nodes.length]?.maxqps;
+          // }, 2000);
         }
       });
       const paths = nodes.map((item) => {
@@ -669,40 +674,40 @@ onMounted(() => {
           },
         ];
       });
-      bartimer3 = setInterval(() => {
-        const roadData = [
-          {
-            id: `${(dialogShow + 1) % nodes.length}`, //必填
-            path: paths[(dialogShow + 1) % nodes.length],
-            style: {
-              flyLineStyle: {
-                color: "white",
-                duration: 0, // 一个完成动画所需时间(单位毫秒)，值越小动画速度越快
-                delay: 0, //延迟执行时间默认
-                repeat: 0, //循环次数 无限循环
-              },
-              pathStyle: {
-                color: "white",
-                show: false,
-              },
-            },
-          },
-        ];
-        chartRef.value.remove("road", [`${dialogShow % nodes.length}`]);
-        chartRef.value.addData("road", roadData);
+      // bartimer3 = setInterval(() => {
+      //   const roadData = [
+      //     {
+      //       id: `${(dialogShow + 1) % nodes.length}`, //必填
+      //       path: paths[(dialogShow + 1) % nodes.length],
+      //       style: {
+      //         flyLineStyle: {
+      //           color: "white",
+      //           duration: 0, // 一个完成动画所需时间(单位毫秒)，值越小动画速度越快
+      //           delay: 0, //延迟执行时间默认
+      //           repeat: 0, //循环次数 无限循环
+      //         },
+      //         pathStyle: {
+      //           color: "white",
+      //           show: false,
+      //         },
+      //       },
+      //     },
+      //   ];
+      //   chartRef.value.remove("road", [`${dialogShow % nodes.length}`]);
+      //   chartRef.value.addData("road", roadData);
 
-        dialogShow += 1;
-        nodeInfo.value.name = nodes[dialogShow % nodes.length]?.name;
-        nodeInfo.value.city = nodes[dialogShow % nodes.length]?.city;
-        nodeInfo.value.domain = nodes[dialogShow % nodes.length]?.domain;
-        nodeInfo.value.ip = nodes[dialogShow % nodes.length]?.ip;
-        nodeInfo.value.software = nodes[dialogShow % nodes.length]?.software;
-        nodeInfo.value.mechine = nodes[dialogShow % nodes.length]?.mechine;
-        nodeInfo.value.maxqps = nodes[dialogShow % nodes.length]?.maxqps;
-      }, 2000);
+      //   dialogShow += 1;
+      //   nodeInfo.value.name = nodes[dialogShow % nodes.length]?.name;
+      //   nodeInfo.value.city = nodes[dialogShow % nodes.length]?.city;
+      //   nodeInfo.value.domain = nodes[dialogShow % nodes.length]?.domain;
+      //   nodeInfo.value.ip = nodes[dialogShow % nodes.length]?.ip;
+      //   nodeInfo.value.software = nodes[dialogShow % nodes.length]?.software;
+      //   nodeInfo.value.mechine = nodes[dialogShow % nodes.length]?.mechine;
+      //   nodeInfo.value.maxqps = nodes[dialogShow % nodes.length]?.maxqps;
+      // }, 2000);
       centerDialog.style.left = "30vw";
       centerDialog.style.top = "60vh";
-      centerDialogVisible.value = true;
+      // centerDialogVisible.value = true;
       startPolling();
     })
     .catch((error) => {
