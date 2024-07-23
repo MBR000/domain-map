@@ -108,7 +108,7 @@
 
 #container2 {
   width: 100%;
-  margin-top: -25vh;
+  margin-top: -22vh;
 }
 
 .modal {
